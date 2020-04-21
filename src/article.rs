@@ -105,7 +105,8 @@ mod tests {
             None,
             String::from(&article_slug));
 
-        let expected_path: PathBuf = ["en", "test", &article_slug].iter().collect();
+        let expected_path: PathBuf = 
+            [language, category, &article_slug].iter().collect();
 
         assert_eq!(&expected_id, article.get_id());
         assert_eq!(expected_path, article.get_path());
@@ -133,7 +134,7 @@ mod tests {
             String::from(&article_slug));
 
         let expected_path: PathBuf =
-            ["en", "test", "sub", &article_slug].iter().collect();
+            [language, category, sub_category, &article_slug].iter().collect();
 
         assert_eq!(&expected_id, article.get_id());
         assert_eq!(expected_path, article.get_path());
