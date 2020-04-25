@@ -1,5 +1,3 @@
-mod article;
-mod article_repository;
+mod domain;
 
-pub use article::*;
-pub use article_repository::*;
+pub use domain::*;
