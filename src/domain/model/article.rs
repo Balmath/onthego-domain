@@ -2,10 +2,31 @@ use chrono::{DateTime, Utc};
 use slugify::slugify;
 use std::path::PathBuf;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ArticleId(String, String, Option<String>, String);
 
+impl ArticleId {
+    /// Returns a new empty article
+    pub fn from_language_category_title(
+        language: String, category: String, title: String) -> Self {
+        Self(String::from(&language),
+             String::from(&category),
+             None,
+             String::from(&title))
+    }
+
+    /// Returns a new empty article with sub-category
+    pub fn from_language_category_sub_category_title(
+        language: String, category: String, sub_category:String, title: String) -> Self {
+        Self(String::from(&language),
+             String::from(&category),
+             Some(String::from(&sub_category)),
+             String::from(&title))
+    }
+}
+
 /// Represent an article
+#[derive(Debug)]
 pub struct Article {
     id: ArticleId,
     pub language: String,
@@ -79,6 +100,12 @@ impl Article {
         path_elements.push(&title_slug);
         
         path_elements.iter().collect()
+    }
+}
+
+impl PartialEq for Article {
+    fn eq(&self, other: &Self) -> bool {
+        self.get_id() == other.get_id()
     }
 }
 
