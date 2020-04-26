@@ -16,11 +16,19 @@ impl MemoryArticleRepository {
 }
 
 impl ArticleRepository for MemoryArticleRepository {
-    fn find_all(&mut self) -> Box<(dyn Iterator<Item = &mut Article> + '_)> {
+    fn find_all(&self) -> Box<(dyn Iterator<Item = &Article> + '_)> {
+        Box::from(self.article_ids_to_article.values())
+    }
+    
+    fn find_all_mut(&mut self) -> Box<(dyn Iterator<Item = &mut Article> + '_)> {
         Box::from(self.article_ids_to_article.values_mut())
     }
 
-    fn find(&mut self, id: &ArticleId) -> Option<&mut Article> {
+    fn find(&self, id: &ArticleId) -> Option<&Article> {
+        self.article_ids_to_article.get(id)
+    }
+
+    fn find_mut(&mut self, id: &ArticleId) -> Option<&mut Article> {
         self.article_ids_to_article.get_mut(id)
     }
     
@@ -45,7 +53,7 @@ mod tests {
 
     #[test]
     fn new_memory_article_repository() {
-        let mut repository = MemoryArticleRepository::new();
+        let repository = MemoryArticleRepository::new();
 
         let mut iter = repository.find_all();
 
@@ -65,12 +73,12 @@ mod tests {
 
         let mut iter = repository.find_all();
 
-        let mut expected_article = Article::from_language_category_title(
+        let expected_article = Article::from_language_category_title(
             String::from("fr"),
             String::from("Catégorie"),
             String::from("Titre"));
 
-        assert_eq!(Some(&mut expected_article), iter.next());
+        assert_eq!(Some(&expected_article), iter.next());
         assert_eq!(None, iter.next());
     }
 
