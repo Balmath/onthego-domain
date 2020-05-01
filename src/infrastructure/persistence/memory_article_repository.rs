@@ -64,19 +64,19 @@ mod tests {
     fn save_article() {
         let mut repository = MemoryArticleRepository::new();
 
-        let article = Article::from_language_category_title(
+        let article = Article::from(ArticleId::LanguageCategoryTitle(
             String::from("fr"),
             String::from("Catégorie"),
-            String::from("Titre"));
+            String::from("Titre")));
 
         repository.save(article);
 
         let mut iter = repository.find_all();
 
-        let expected_article = Article::from_language_category_title(
+        let expected_article = Article::from(ArticleId::LanguageCategoryTitle(
             String::from("fr"),
             String::from("Catégorie"),
-            String::from("Titre"));
+            String::from("Titre")));
 
         assert_eq!(Some(&expected_article), iter.next());
         assert_eq!(None, iter.next());
@@ -86,24 +86,24 @@ mod tests {
     fn find_article() {
         let mut repository = MemoryArticleRepository::new();
 
-        let article = Article::from_language_category_title(
+        let article = Article::from(ArticleId::LanguageCategoryTitle(
             String::from("fr"),
             String::from("Catégorie"),
-            String::from("Titre"));
+            String::from("Titre")));
 
         repository.save(article);
 
-        let id = ArticleId::from_language_category_title(
+        let id = ArticleId::from(ArticleId::LanguageCategoryTitle(
             String::from("fr"),
             String::from("Catégorie"),
-            String::from("Titre"));
+            String::from("Titre")));
         
         let article_found = repository.find(&id).unwrap();
 
-        let expected_article = Article::from_language_category_title(
+        let expected_article = Article::from(ArticleId::LanguageCategoryTitle(
             String::from("fr"),
             String::from("Catégorie"),
-            String::from("Titre"));
+            String::from("Titre")));
 
         assert_eq!(&expected_article, article_found);
     }
@@ -112,17 +112,17 @@ mod tests {
     fn delete_article() {
         let mut repository = MemoryArticleRepository::new();
 
-        let article = Article::from_language_category_title(
+        let article = Article::from(ArticleId::LanguageCategoryTitle(
             String::from("fr"),
             String::from("Catégorie"),
-            String::from("Titre"));
+            String::from("Titre")));
 
         repository.save(article);
 
-        let id = ArticleId::from_language_category_title(
+        let id = ArticleId::from(ArticleId::LanguageCategoryTitle(
             String::from("fr"),
             String::from("Catégorie"),
-            String::from("Titre"));
+            String::from("Titre")));
 
         repository.delete(&id);
 
