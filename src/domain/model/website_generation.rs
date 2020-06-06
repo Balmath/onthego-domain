@@ -2,6 +2,8 @@ use chrono::{DateTime, Utc};
 use std::io::{Read, Write};
 use std::path::PathBuf;
 
+// Input types
+
 pub enum Language {
     English,
     French,
@@ -38,7 +40,7 @@ pub struct Tag {
 pub trait Buffer: Read + Write {}
 
 pub struct Image {
-    content: Box<dyn Buffer>,
+    buffer: Box<dyn Buffer>,
 }
 
 pub struct EditedArticle {
@@ -57,12 +59,14 @@ pub struct ArticlesEdited {
     edited_articles: Vec<EditedArticle>,
 }
 
-pub struct HtmlPage {
-    content: Box<dyn Write>,
-}
+// Output types
 
 pub struct Directory {
     path: PathBuf,
+}
+
+pub struct HtmlPage {
+    content: Box<dyn Write>,
 }
 
 pub struct ArticlePackageGenerated {
@@ -107,8 +111,36 @@ pub enum GenerateWebsiteEvent {
     TagHtmlPageGenerated(TagHtmlPageGenerated),
 }
 
-pub fn generate_website(articlesEdited: ArticlesEdited) -> Vec<GenerateWebsiteEvent> {
-    vec![]
+// First step generate article packages and sort articles by most recent date
+
+struct SortedArticle {
+    language: Language,
+    category: Category,
+    sub_category: Option<SubCategory>,
+    title: Title,
+    author: Author,
+    content: Content,
+    tags: Vec<Tag>,
+}
+
+struct ArticlePackageGeneratedAndSorted(Vec<ArticlePackageGenerated>, Vec<SortedArticle>);
+
+fn generate_articles_packages_and_get_sorted_articles(
+    articles_edited: ArticlesEdited,
+) -> ArticlePackageGeneratedAndSorted {
+    ArticlePackageGeneratedAndSorted(vec![], vec![])
+}
+
+// Workflow
+
+pub fn generate_website(articles_edited: ArticlesEdited) -> Vec<GenerateWebsiteEvent> {
+    let ArticlePackageGeneratedAndSorted(article_packages_generated, sorted_articles) =
+        generate_articles_packages_and_get_sorted_articles(articles_edited);
+
+    article_packages_generated
+        .into_iter()
+        .map(|x| GenerateWebsiteEvent::ArticlePackageGenerated(x))
+        .collect()
 }
 
 impl HtmlPageIndex {
