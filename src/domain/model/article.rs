@@ -3,26 +3,9 @@ use slugify::slugify;
 use std::path::PathBuf;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ArticleId(String, String, Option<String>, String);
-
-impl ArticleId {
-    /// Returns a new empty article
-    pub fn from_language_category_title(
-        language: String, category: String, title: String) -> Self {
-        Self(String::from(&language),
-             String::from(&category),
-             None,
-             String::from(&title))
-    }
-
-    /// Returns a new empty article with sub-category
-    pub fn from_language_category_sub_category_title(
-        language: String, category: String, sub_category:String, title: String) -> Self {
-        Self(String::from(&language),
-             String::from(&category),
-             Some(String::from(&sub_category)),
-             String::from(&title))
-    }
+pub enum ArticleId {
+    LanguageCategoryTitle(String, String, String),
+    LanguageCategorySubCategoryTitle(String, String, String, String),
 }
 
 /// Represent an article
@@ -41,40 +24,25 @@ pub struct Article {
 
 impl Article {
     /// Returns a new empty article
-    pub fn from_language_category_title(
-        language: String, category: String, title: String) -> Self {
-        Self {
-            id: ArticleId(String::from(&language),
-                          String::from(&category),
-                          None,
-                          String::from(&title)),
-            language,
-            category,
-            sub_category: None,
-            title,
-            author: String::default(),
-            date: Utc::now(),
-            content: String::default(),
-            tags: vec![],
-        }
-    }
-
-    /// Returns a new empty article with sub-category
-    pub fn from_language_category_sub_category_title(
-        language: String, category: String, sub_category:String, title: String) -> Self {
-        Self {
-            id: ArticleId(String::from(&language),
-                          String::from(&category),
-                          Some(String::from(&sub_category)),
-                          String::from(&title)),
-            language,
-            category,
-            sub_category: Some(sub_category),
-            title,
-            author: String::default(),
-            date: Utc::now(),
-            content: String::default(),
-            tags: vec![],
+    pub fn from(id: ArticleId) -> Self {
+        let id_clone = id.clone();
+        let author = String::default();
+        let date = Utc::now();
+        let content = String::default();
+        let tags = vec![];
+        match id {
+            ArticleId::LanguageCategoryTitle(language, category, title) =>
+                Self {
+                    id: id_clone, language, category, sub_category: None, title,
+                    author, date, content, tags,
+                },
+            ArticleId::LanguageCategorySubCategoryTitle(
+                language, category, sub_category, title) =>
+                Self {
+                    id: id_clone, language, category,
+                    sub_category: Some(sub_category),
+                    title, author, date, content, tags,
+                },
         }
     }
 
@@ -119,17 +87,16 @@ mod tests {
         let category = "test";
         let title = "title";
 
-        let article = Article::from_language_category_title(
+        let article = Article::from(ArticleId::LanguageCategoryTitle(
             String::from(language),
             String::from(category),
-            String::from(title));
+            String::from(title)));
 
         let article_slug = article.get_slug();
 
-        let expected_id = ArticleId(
+        let expected_id = ArticleId::LanguageCategoryTitle(
             String::from(language),
             String::from(category),
-            None,
             String::from(&article_slug));
 
         let expected_path: PathBuf = 
@@ -146,18 +113,18 @@ mod tests {
         let sub_category = "sub";
         let title = "title";
 
-        let article = Article::from_language_category_sub_category_title(
+        let article = Article::from(ArticleId::LanguageCategorySubCategoryTitle(
             String::from(language),
             String::from(category),
             String::from(sub_category),
-            String::from(title));
+            String::from(title)));
 
         let article_slug = article.get_slug();
 
-        let expected_id = ArticleId(
+        let expected_id = ArticleId::LanguageCategorySubCategoryTitle(
             String::from(language),
             String::from(category),
-            Some(String::from(sub_category)),
+            String::from(sub_category),
             String::from(&article_slug));
 
         let expected_path: PathBuf =
