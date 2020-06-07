@@ -1,3 +1,3 @@
-mod model;
+mod website_generation;
 
-pub use self::model::*;
+pub use website_generation::*;
