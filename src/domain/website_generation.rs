@@ -142,8 +142,11 @@ fn generate_articles(articles: Articles) -> Articles {
 
 // Create article page generated events
 
-fn create_article_page_created_events(articles: &Articles) -> Vec<GenerateWebsiteEvent> {
-    vec![]
+fn create_article_page_generated_events(articles: &Articles) -> Vec<GenerateWebsiteEvent> {
+    match articles {
+        Articles::Generated(_) => vec![],
+        _ => panic!("The article page generated events can only be created with generate articles"),
+    }
 }
 
 // Workflow
@@ -155,7 +158,7 @@ pub fn generate_website(articles: ArticlesEdited) -> Vec<GenerateWebsiteEvent> {
 
     articles = generate_articles(articles);
 
-    create_article_page_created_events(&articles)
+    create_article_page_generated_events(&articles)
 }
 
 // Simple types implementation
