@@ -85,13 +85,13 @@ pub struct HtmlPageIndex(usize);
 
 pub enum GenerateWebsiteEvent {
     ArticlePageGenerated(HtmlPagePath),
-    HomeHtmlPageGenerated(HtmlPagePath),
     CategoryHtmlPageGenerated(HtmlPagePath),
+    HomeHtmlPageGenerated(HtmlPagePath),
     SubCategoryHtmlPageGenerated(HtmlPagePath),
     TagHtmlPageGenerated(HtmlPagePath),
 }
 
-// Articles steps
+// Articles steps types
 
 struct HtmlContent(Box<dyn Buffer>);
 
@@ -112,53 +112,20 @@ enum Articles {
     Generated(Vec<GeneratedArticle>),
 }
 
-// First step: sort articles by most recent publication date
-
-fn sort_articles_by_most_recent_publication(articles: Articles) -> Articles {
-    match articles {
-        Articles::Edited(ArticlesEdited(mut articles)) => {
-            articles.sort_by(|a, b| a.published_date.partial_cmp(&b.published_date).unwrap());
-
-            Articles::Sorted(articles)
-        }
-        _ => articles,
-    }
-}
-
-// Second step: generate article HTML pages
-
-fn generate_articles_from_edited_articles(articles: Vec<EditedArticle>) -> Articles {
-    Articles::Generated(vec![])
-}
-
-fn generate_articles(articles: Articles) -> Articles {
-    match articles {
-        Articles::Edited(ArticlesEdited(articles)) | Articles::Sorted(articles) => {
-            generate_articles_from_edited_articles(articles)
-        }
-        _ => articles,
-    }
-}
-
-// Create article page generated events
-
-fn create_article_page_generated_events(articles: &Articles) -> Vec<GenerateWebsiteEvent> {
-    match articles {
-        Articles::Generated(_) => vec![],
-        _ => panic!("The article page generated events can only be created with generate articles"),
-    }
-}
-
 // Workflow
 
+struct WebsiteGenerator(Option<Articles>, Option<Vec<GenerateWebsiteEvent>>);
+
 pub fn generate_website(articles: ArticlesEdited) -> Vec<GenerateWebsiteEvent> {
-    let mut articles = Articles::Edited(articles);
-
-    articles = sort_articles_by_most_recent_publication(articles);
-
-    articles = generate_articles(articles);
-
-    create_article_page_generated_events(&articles)
+    WebsiteGenerator::new(articles)
+        .sort_articles_by_most_recent_publication()
+        .generate_article_html_pages()
+        .generate_sub_category_html_pages()
+        .generate_category_html_pages()
+        .generate_tag_html_pages()
+        .generate_home_html_pages()
+        .get_events()
+        .unwrap()
 }
 
 // Simple types implementation
@@ -275,6 +242,73 @@ impl PublishedDate {
             Language::English => format!("{} {}, {}", month, day, year),
             Language::French => format!("{} {} {}", day, month, year),
         }
+    }
+}
+
+impl WebsiteGenerator {
+    fn new(articles: ArticlesEdited) -> Self {
+        WebsiteGenerator(Some(Articles::Edited(articles)), Some(Vec::default()))
+    }
+
+    fn sort_articles_by_most_recent_publication(&mut self) -> &mut Self {
+        if let Some(Articles::Edited(ArticlesEdited(mut articles))) = self.0.take() {
+            articles.sort_by(|a, b| a.published_date.partial_cmp(&b.published_date).unwrap());
+
+            self.0 = Some(Articles::Sorted(articles));
+        }
+
+        self
+    }
+
+    fn generate_article_html_pages(&mut self) -> &mut Self {
+        if let Some(articles) = self.0.take() {
+            match articles {
+                Articles::Edited(ArticlesEdited(articles)) | Articles::Sorted(articles) => {
+                    // TODO: generate article HTML pages
+                }
+                _ => (),
+            }
+        }
+
+        self
+    }
+
+    fn generate_sub_category_html_pages(&mut self) -> &mut Self {
+        if let Some(Articles::Generated(articles)) = &self.0 {
+            // TODO: generate sub category HTML pages
+        }
+
+        self
+    }
+
+    fn generate_category_html_pages(&mut self) -> &mut Self {
+        if let Some(Articles::Generated(articles)) = &self.0 {
+            // TODO: generate category HTML pages
+        }
+
+        self
+    }
+
+    fn generate_tag_html_pages(&mut self) -> &mut Self {
+        if let Some(Articles::Generated(articles)) = &self.0 {
+            // TODO: generate tag HTML pages
+        }
+
+        self
+    }
+
+    fn generate_home_html_pages(&mut self) -> &mut Self {
+        if let Some(Articles::Generated(articles)) = &self.0 {
+            // TODO: generate home HTML pages
+        }
+
+        self
+    }
+
+    fn get_events(&mut self) -> Option<Vec<GenerateWebsiteEvent>> {
+        self.0 = None;
+
+        self.1.take()
     }
 }
 
