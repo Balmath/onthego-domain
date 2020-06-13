@@ -74,6 +74,10 @@ pub struct EditedArticle {
 
 pub struct ArticlesEdited(Vec<EditedArticle>);
 
+// Dependencies
+
+type CreateDirectory<'a> = dyn Fn(&std::path::PathBuf) -> bool + 'a;
+
 // Output types
 
 pub struct HtmlPagePath(PathBuf);
@@ -114,10 +118,17 @@ enum Articles {
 
 // Workflow
 
-struct WebsiteGenerator(Option<Articles>, Option<Vec<GenerateWebsiteEvent>>);
+struct WebsiteGenerator<'a> {
+    articles: Option<Articles>,                // input
+    create_directory: &'a CreateDirectory<'a>, // dependency
+    events: Option<Vec<GenerateWebsiteEvent>>, // output
+}
 
-pub fn generate_website(articles: ArticlesEdited) -> Vec<GenerateWebsiteEvent> {
-    WebsiteGenerator::new(articles)
+pub fn generate_website<'a>(
+    create_directory: &'a CreateDirectory,
+    articles: ArticlesEdited,
+) -> Vec<GenerateWebsiteEvent> {
+    WebsiteGenerator::new(articles, create_directory)
         .sort_articles_by_most_recent_publication()
         .generate_article_html_pages()
         .generate_sub_category_html_pages()
@@ -126,6 +137,25 @@ pub fn generate_website(articles: ArticlesEdited) -> Vec<GenerateWebsiteEvent> {
         .generate_home_html_pages()
         .get_events()
         .unwrap()
+}
+
+// Steps functions
+
+fn get_article_directory(article: &EditedArticle) -> std::path::PathBuf {
+    panic!("Not implemented")
+}
+
+fn generate_article_html_page<'a>(
+    create_directory: &'a CreateDirectory,
+    article: EditedArticle,
+) -> Option<GeneratedArticle> {
+    let article_directory = get_article_directory(&article);
+
+    if create_directory(&article_directory) {
+        panic!("Not implemented")
+    } else {
+        None
+    }
 }
 
 // Simple types implementation
@@ -245,26 +275,37 @@ impl PublishedDate {
     }
 }
 
-impl WebsiteGenerator {
-    fn new(articles: ArticlesEdited) -> Self {
-        WebsiteGenerator(Some(Articles::Edited(articles)), Some(Vec::default()))
+impl<'a> WebsiteGenerator<'a> {
+    fn new(articles: ArticlesEdited, create_directory: &'a CreateDirectory) -> Self {
+        Self {
+            articles: Some(Articles::Edited(articles)),
+            create_directory: create_directory,
+            events: Some(Vec::default()),
+        }
     }
 
     fn sort_articles_by_most_recent_publication(&mut self) -> &mut Self {
-        if let Some(Articles::Edited(ArticlesEdited(mut articles))) = self.0.take() {
+        if let Some(Articles::Edited(ArticlesEdited(mut articles))) = self.articles.take() {
             articles.sort_by(|a, b| a.published_date.partial_cmp(&b.published_date).unwrap());
 
-            self.0 = Some(Articles::Sorted(articles));
+            self.articles = Some(Articles::Sorted(articles));
         }
 
         self
     }
 
     fn generate_article_html_pages(&mut self) -> &mut Self {
-        if let Some(articles) = self.0.take() {
+        if let Some(articles) = self.articles.take() {
             match articles {
                 Articles::Edited(ArticlesEdited(articles)) | Articles::Sorted(articles) => {
-                    // TODO: generate article HTML pages
+                    self.articles = Some(Articles::Generated(
+                        articles
+                            .into_iter()
+                            .map(|article| {
+                                generate_article_html_page(&self.create_directory, article).unwrap()
+                            })
+                            .collect(),
+                    ))
                 }
                 _ => (),
             }
@@ -274,7 +315,7 @@ impl WebsiteGenerator {
     }
 
     fn generate_sub_category_html_pages(&mut self) -> &mut Self {
-        if let Some(Articles::Generated(articles)) = &self.0 {
+        if let Some(Articles::Generated(articles)) = &self.articles {
             // TODO: generate sub category HTML pages
         }
 
@@ -282,7 +323,7 @@ impl WebsiteGenerator {
     }
 
     fn generate_category_html_pages(&mut self) -> &mut Self {
-        if let Some(Articles::Generated(articles)) = &self.0 {
+        if let Some(Articles::Generated(articles)) = &self.articles {
             // TODO: generate category HTML pages
         }
 
@@ -290,7 +331,7 @@ impl WebsiteGenerator {
     }
 
     fn generate_tag_html_pages(&mut self) -> &mut Self {
-        if let Some(Articles::Generated(articles)) = &self.0 {
+        if let Some(Articles::Generated(articles)) = &self.articles {
             // TODO: generate tag HTML pages
         }
 
@@ -298,7 +339,7 @@ impl WebsiteGenerator {
     }
 
     fn generate_home_html_pages(&mut self) -> &mut Self {
-        if let Some(Articles::Generated(articles)) = &self.0 {
+        if let Some(Articles::Generated(articles)) = &self.articles {
             // TODO: generate home HTML pages
         }
 
@@ -306,9 +347,9 @@ impl WebsiteGenerator {
     }
 
     fn get_events(&mut self) -> Option<Vec<GenerateWebsiteEvent>> {
-        self.0 = None;
+        self.articles = None;
 
-        self.1.take()
+        self.events.take()
     }
 }
 
@@ -323,14 +364,28 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_html_page_index_creation() {
-        assert_eq!(HtmlPageIndex(10), HtmlPageIndex::new(10));
-        assert_eq!(HtmlPageIndex(0), HtmlPageIndex::new(0));
+    fn test_year_creation() {
+        assert_eq!(Year(2020), Year::new(2020));
+        assert_eq!(Year(0), Year::new(0));
     }
 
     #[test]
-    fn test_html_page_index_value() {
-        assert_eq!(210, HtmlPageIndex::new(210).value());
-        assert_eq!(0, HtmlPageIndex::new(0).value());
+    fn test_year_value() {
+        assert_eq!(2010, Year::new(2010).value());
+        assert_eq!(0, Year::new(0).value());
+    }
+
+    #[test]
+    fn test_day_creation() {
+        assert_eq!(Some(Day(1)), Day::new(1));
+        assert_eq!(Some(Day(31)), Day::new(31));
+        assert_eq!(None, Day::new(0));
+        assert_eq!(None, Day::new(32));
+    }
+
+    #[test]
+    fn test_day_value() {
+        assert_eq!(4, Day::new(4).unwrap().value());
+        assert_eq!(25, Day::new(25).unwrap().value());
     }
 }
